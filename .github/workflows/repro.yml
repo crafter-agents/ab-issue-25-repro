@@ -1,0 +1,32 @@
+name: windows-install
+on: [push, workflow_dispatch]
+jobs:
+  run:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["0.5.0", "latest"]
+        shell: [pwsh, cmd]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install -g agent-browser@${{ matrix.version }}
+      - name: generated shim
+        shell: pwsh
+        run: Get-Content "$(npm prefix -g)\agent-browser.ps1"
+      - run: agent-browser --version
+      - run: agent-browser install
+      - run: agent-browser open https://example.com
+      - run: agent-browser snapshot
+      - run: agent-browser screenshot shot.png
+      - run: agent-browser close
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.version }}-${{ matrix.shell }}
+          path: shot.png
+          if-no-files-found: ignore
